@@ -4,108 +4,100 @@ import os
 from utils import *
 from tableExtraction import *
 
-# -------------------- FUNCTIONS --------------------
+# ---------------------- FUNCTIONS ----------------------
 
-def extract_table_lines(image):
-    """Extract vertical and horizontal lines from a paper image."""
-    grayScale = convertToGrayScale(image)
-    _, binary = cv.threshold(grayScale, 127, 255, cv.THRESH_BINARY_INV)
+def detect_table_cells(image, min_cell_width=30, min_cell_height=20):
+    """Detect table cells and group them into rows."""
+    img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-    # Vertical lines
-    verticalSE = cv.getStructuringElement(cv.MORPH_RECT, (1, 20))
-    erodedImage = cv.erode(binary, verticalSE, iterations=10)
-    verticalLines = cv.dilate(erodedImage, verticalSE, iterations=15)
+    # Thresholding and invert (lines = white)
+    _, img_bin = cv.threshold(img_gray, 128, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)
+    img_bin = cv.bitwise_not(img_bin)
 
-    # Horizontal lines
-    horizontalSE = cv.getStructuringElement(cv.MORPH_RECT, (20, 1))
-    erodedImage = cv.erode(binary, horizontalSE, iterations=10)
-    horizontalLines = cv.dilate(erodedImage, horizontalSE, iterations=20)
+    # Detect vertical lines
+    kernel_length_v = img_gray.shape[1] // 120
+    vertical_kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, kernel_length_v))
+    temp_img_v = cv.erode(img_bin, vertical_kernel, iterations=5)
+    vertical_lines = cv.dilate(temp_img_v, vertical_kernel, iterations=5)
 
-    # Combine lines
-    verticalHorizontalLines = cv.add(verticalLines, horizontalLines)
+    # Detect horizontal lines
+    kernel_length_h = img_gray.shape[0] // 40
+    horizontal_kernel = cv.getStructuringElement(cv.MORPH_RECT, (kernel_length_h, 1))
+    temp_img_h = cv.erode(img_bin, horizontal_kernel, iterations=5)
+    horizontal_lines = cv.dilate(temp_img_h, horizontal_kernel, iterations=5)
 
-    # Make sure binary
-    _, tableMask = cv.threshold(verticalHorizontalLines, 127, 255, cv.THRESH_BINARY)
+    # Combine lines to get table skeleton
+    table_segment = cv.addWeighted(vertical_lines, 0.5, horizontal_lines, 0.5, 0.0)
+    kernel = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
+    table_segment = cv.erode(cv.bitwise_not(table_segment), kernel, iterations=2)
+    _, table_segment = cv.threshold(table_segment, 0, 255, cv.THRESH_OTSU)
 
-    return tableMask
+    # Find contours
+    contours, _ = cv.findContours(table_segment, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
-def find_table_contours(tableMask):
-    """Find contours from table mask."""
-    contours, hierarchy = cv.findContours(tableMask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    return contours
-
-def extract_cells_from_contours(contours, minWidth=30, minHeight=20):
-    """Extract bounding rectangles of valid cells from contours."""
+    # Filter valid cells
     cells = []
-    for contour in contours:
-        x, y, w, h = cv.boundingRect(contour)
-        if w > minWidth and h > minHeight:
+    for c in contours:
+        x, y, w, h = cv.boundingRect(c)
+        if w >= min_cell_width and h >= min_cell_height:
             cells.append((x, y, w, h))
-    return cells
 
-def group_cells_into_rows(cells, tolerance=20):
-    """Group sorted cells into rows based on y-coordinate proximity."""
+    # Sort cells top → bottom
     cells = sorted(cells, key=lambda b: b[1])
-    rows = []
-    row = [cells[0]]
 
-    for i in range(1, len(cells)):
-        if abs(cells[i][1] - row[-1][1]) < tolerance:
-            row.append(cells[i])
+    # Group cells into rows based on y-coordinate
+    rows = []
+    current_row = [cells[0]]
+    for cell in cells[1:]:
+        if abs(cell[1] - current_row[-1][1]) < 20:  # tolerance for same row
+            current_row.append(cell)
         else:
-            rows.append(sorted(row, key=lambda b: b[0]))
-            row = [cells[i]]
-    rows.append(sorted(row, key=lambda b: b[0]))
+            rows.append(sorted(current_row, key=lambda b: b[0]))
+            current_row = [cell]
+    rows.append(sorted(current_row, key=lambda b: b[0]))
+
     return rows
 
-def visualize_rows(image, rows):
-    """Draw rectangles for each cell in each row for visualization."""
-    rowImage = cv.cvtColor(image, cv.COLOR_GRAY2BGR)
-    colors = [(255,0,0),(0,255,0),(0,0,255),(255,255,0)]
-    for i, r in enumerate(rows):
-        for (x, y, w, h) in r:
-            cv.rectangle(rowImage, (x, y), (x+w, y+h), colors[i % 4], 2)
-    return rowImage
+def visualize_cells(image, rows):
+    """Draw rectangles around each detected cell."""
+    output_img = image.copy()
+    colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0)]
+    for i, row in enumerate(rows):
+        for (x, y, w, h) in row:
+            cv.rectangle(output_img, (x, y), (x+w, y+h), colors[i % 4], 2)
+    return output_img
 
-def process_image(imagePath):
-    """Complete pipeline: extract paper, detect table lines, find cells, group rows."""
-    paper = extractPaper(imagePath)
-    tableMask = extract_table_lines(paper)
-    contours = find_table_contours(tableMask)
-    cells = extract_cells_from_contours(contours)
-    rows = group_cells_into_rows(cells)
-    grayScale = convertToGrayScale(paper)
-    rowImage = visualize_rows(grayScale, rows)
-    return paper, rows, rowImage
+def save_cells(image, rows, output_root="../data/cells", image_index=0):
+    """Save each cell into folders per image."""
+    folder_path = os.path.join(output_root, str(image_index+1))
+    os.makedirs(folder_path, exist_ok=True)
 
-def save_cells(imagePath, rows, outputRoot="../data/cells"):
-    """Save each detected cell into a folder named after the image."""
-    paper = extractPaper(imagePath)
-    imageName = os.path.splitext(os.path.basename(imagePath))[0]
-    folderPath = os.path.join(outputRoot, imageName)
-    os.makedirs(folderPath, exist_ok=True)
+    for i, row in enumerate(rows):
+        for j, (x, y, w, h) in enumerate(row):
+            cell_img = image[y:y+h, x:x+w]
+            cell_path = os.path.join(folder_path, f"row{i+1}_cell{j+1}.jpg")
+            cv.imwrite(cell_path, cell_img)
 
-    for i, r in enumerate(rows):
-        for j, (x, y, w, h) in enumerate(r):
-            cellImage = paper[y:y+h, x:x+w]
-            outputPath = os.path.join(folderPath, f"row{i+1}_cell{j+1}.jpg")
-            cv.imwrite(outputPath, cellImage)
+# ---------------------- TEST FUNCTION ----------------------
 
-# -------------------- TEST FUNCTION --------------------
+def test_cell_extraction(image_paths, output_root="../data/cells"):
+    for i, img_path in enumerate(image_paths):
+        print(f"Processing image {i+1}/{len(image_paths)}")
+        image = cv.imread(img_path)
+        image = extractTable(img_path)
+        rows = detect_table_cells(image)
+        output_img = visualize_cells(image, rows)
+        show_images([output_img], titles=[f"Cells Highlighted - Image {i+1}"])
+        save_cells(image, rows, output_root, image_index=i)
+        print(f"Saved {len(rows)} rows for image {i+1}")
 
-def test_table_cell_extraction():
-    images = ["../data/images/1.jpg", "../data/images/2.jpg", "../data/images/3.jpg", "../data/images/4.jpg", "../data/images/5.jpg", "../data/images/6.jpg", "../data/images/7.jpg", "../data/images/8.jpg", "../data/images/9.jpg",
-              "../data/images/10.jpg", "../data/images/11.jpg", "../data/images/12.jpg", "../data/images/13.jpg", "../data/images/14.jpg", "../data/images/15.jpg", "../data/images/16.jpg", "../data/images/17.jpg", "../data/images/18.jpg",
-              "../data/images/19.jpg", "../data/images/20.jpg", "../data/images/21.jpg", "../data/images/22.jpg", "../data/images/23.jpg","../data/images/24.jpg"]
+# ---------------------- USAGE ----------------------
 
-    for i, imgPath in enumerate(images):
-        paper, rows, rowImage = process_image(imgPath)
-        # Optional visualization
-        show_images([paper, rowImage], titles=[f"Original Paper {i+1}", f"Detected Rows {i+1}"])
-        save_cells(imgPath, rows)
-        print(f"Processed and saved cells for image {i+1}")
+images = ["../data/images/1.jpg", "../data/images/2.jpg", "../data/images/3.jpg", "../data/images/4.jpg",
+          "../data/images/5.jpg", "../data/images/6.jpg", "../data/images/7.jpg", "../data/images/8.jpg",
+          "../data/images/9.jpg", "../data/images/10.jpg", "../data/images/11.jpg", "../data/images/12.jpg",
+          "../data/images/13.jpg", "../data/images/14.jpg", "../data/images/15.jpg", "../data/images/16.jpg",
+          "../data/images/17.jpg", "../data/images/18.jpg", "../data/images/19.jpg", "../data/images/20.jpg",
+          "../data/images/21.jpg", "../data/images/22.jpg", "../data/images/23.jpg", "../data/images/24.jpg"]
 
-# -------------------- MAIN --------------------
-
-if __name__ == "__main__":
-    test_table_cell_extraction()
+test_cell_extraction(images)
