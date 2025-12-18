@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from utils import *
+import os
 
 # 1) Image reading and preprocessing
 def readImage(path):
@@ -78,7 +79,7 @@ def calculateCroppedImageDimensions(orderedPoints):
     return width, height
 
 def warpPaper(image, contour):
-    """Warp the paper to a top-down view rectangle."""
+    # Warp the paper to a top-down view rectangle.
     orderedPoints = orderPoints(contour)
     width, height = calculateCroppedImageDimensions(orderedPoints)
     destinationPoints = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
@@ -88,7 +89,7 @@ def warpPaper(image, contour):
 
 # 4) Visualization functions
 def drawContours(image, contours, biggest=None):
-    """Draw all contours in green, highlight biggest in thick green."""
+    # Draw all contours in green, highlight biggest in thick green.
     img_copy = image.copy()
     cv.drawContours(img_copy, contours, -1, (0,255,0), 2)
     if biggest is not None:
@@ -108,12 +109,15 @@ def extractPaper(imagePath):
 
 # 6) Testing for all dataset
 def test():
-    images = ["../data/1.jpg", "../data/2.jpg", "../data/3.jpg", "../data/4.jpg", "../data/5.jpg", "../data/6.jpg", "../data/7.jpg", "../data/8.jpg", "../data/9.jpg",
-               "../data/10.jpg", "../data/11.jpg", "../data/12.jpg", "../data/13.jpg", "../data/14.jpg", "../data/15.jpg", "../data/16.jpg", "../data/17.jpg", "../data/17.jpg",
-                "../data/18.jpg", "../data/19.jpg", "../data/20.jpg", "../data/21.jpg", "../data/22.jpg","../data/23.jpg", "../data/24.jpg"]
+    images = ["../data/images/1.jpg", "../data/images/2.jpg", "../data/images/3.jpg", "../data/images/4.jpg", "../data/images/5.jpg", "../data/images/6.jpg", "../data/images/7.jpg", "../data/images/8.jpg", "../data/images/9.jpg",
+               "../data/images/10.jpg", "../data/images/11.jpg", "../data/images/12.jpg", "../data/images/13.jpg", "../data/images/14.jpg", "../data/images/15.jpg", "../data/images/16.jpg", "../data/images/17.jpg", "../data/images/18.jpg",
+                "../data/images/19.jpg", "../data/images/20.jpg", "../data/images/21.jpg", "../data/images/22.jpg", "../data/images/23.jpg","../data/images/24.jpg"]
     for i, imagePath in enumerate(images):
         paper = extractPaper(imagePath)
         image = readImage(imagePath)
-        show_images([image, paper], titles = [f"Original {i + 1}", f"Scanned Paper {i + 1}"])
+        # show_images([image, paper], titles = [f"Original {i + 1}", f"Scanned Paper {i + 1}"])
+        outputPath = f"../data/papers/{i + 1}.jpg"
+        cv.imwrite(outputPath, paper)
+        print(f"Saved: {outputPath}")
 
 test()

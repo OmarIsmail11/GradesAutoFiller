@@ -29,6 +29,7 @@ def findBiggestFourSidedContour(thresh_image):
     # Find the largest 4-sided contour in a binary image.
     contours, _ = cv.findContours(thresh_image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     maxArea = 0
+    biggestContour = None
     for contour in contours:
         area = cv.contourArea(contour)
         perimeter = cv.arcLength(contour, True)
@@ -109,9 +110,9 @@ def extractPaper(imagePath):
 
 # 6) Testing for all dataset
 def test():
-    images = ["../data/1.jpg", "../data/2.jpg", "../data/3.jpg", "../data/4.jpg", "../data/5.jpg", "../data/6.jpg", "../data/7.jpg", "../data/8.jpg", "../data/9.jpg",
-               "../data/10.jpg", "../data/11.jpg", "../data/12.jpg", "../data/13.jpg", "../data/14.jpg", "../data/15.jpg", "../data/16.jpg", "../data/17.jpg", "../data/17.jpg",
-                "../data/18.jpg", "../data/19.jpg", "../data/20.jpg", "../data/21.jpg", "../data/22.jpg","../data/23.jpg", "../data/24.jpg"]
+    images = ["../data/images/1.jpg", "../data/images/2.jpg", "../data/images/3.jpg", "../data/images/4.jpg", "../data/images/5.jpg", "../data/images/6.jpg", "../data/images/7.jpg", "../data/images/8.jpg", "../data/images/9.jpg",
+               "../data/images/10.jpg", "../data/images/11.jpg", "../data/images/12.jpg", "../data/images/13.jpg", "../data/images/14.jpg", "../data/images/15.jpg", "../data/images/16.jpg", "../data/images/17.jpg", "../data/images/18.jpg",
+                "../data/images/19.jpg", "../data/images/20.jpg", "../data/images/21.jpg", "../data/images/22.jpg", "../data/images/23.jpg","../data/images/24.jpg"]
     for i, imagePath in enumerate(images):
         paper = extractPaper(imagePath)
         image = readImage(imagePath)
@@ -120,4 +121,5 @@ def test():
         cv.imwrite(outputPath, paper)
         print(f"Saved: {outputPath}")
 
-test()
+if __name__ == "__main__":
+    test()
