@@ -2,6 +2,7 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 from utils import *
+import os
 
 # 1) Image reading and preprocessing
 def readImage(path):
@@ -114,6 +115,9 @@ def test():
     for i, imagePath in enumerate(images):
         paper = extractPaper(imagePath)
         image = readImage(imagePath)
-        show_images([image, paper], titles = [f"Original {i + 1}", f"Scanned Paper {i + 1}"])
+        # show_images([image, paper], titles = [f"Original {i + 1}", f"Scanned Paper {i + 1}"])
+        outputPath = f"../data/papers/{i + 1}.jpg"
+        cv.imwrite(outputPath, paper)
+        print(f"Saved: {outputPath}")
 
 test()
