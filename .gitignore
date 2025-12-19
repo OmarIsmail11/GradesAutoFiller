@@ -4,3 +4,7 @@
 .env
 *.h5
 *.joblib
+*.xlsx
+*.csv
+__pycache__/
+*.pyc

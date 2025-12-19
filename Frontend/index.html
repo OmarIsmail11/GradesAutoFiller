@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Grade Sheet Processor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Table Recognition</h1>
+        <p>Upload a scanned grade sheet and define your columns.</p>
+
+        <div class="main-layout">
+            <div class="config-panel">
+                <h3>1. Define Columns</h3>
+                <div id="column-list">
+                    </div>
+                <button id="add-col-btn" class="secondary-btn">+ Add Column</button>
+
+                <h3>2. Upload Image</h3>
+                <input type="file" id="image-input" accept="image/*">
+                
+                <button id="process-btn" class="primary-btn">Process Sheet</button>
+            </div>
+
+            <div class="status-panel">
+                <div id="loader" class="hidden">
+                    <div class="spinner"></div>
+                    <p>AI is processing table and recognizing text...</p>
+                </div>
+
+                <div id="result-area" class="hidden">
+                    <div class="success-icon">✓</div>
+                    <h3>Processing Complete!</h3>
+                    <button id="download-btn" class="download-btn">Download Excel (.xlsx)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
