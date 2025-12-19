@@ -51,6 +51,5 @@ async def process_sheet(
         raise HTTPException(status_code=500, detail=str(e))
     
     finally:
-        # if os.path.exists(temp_path):
-        #     os.remove(temp_path)
-        pass
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
