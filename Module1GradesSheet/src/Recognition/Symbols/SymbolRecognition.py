@@ -1,186 +1,203 @@
-import cv2 as cv
+import cv2
 import numpy as np
-from scipy.signal import find_peaks
+from typing import Tuple, Dict
 
 class SymbolClassifier:
+    """Classical image processing approach to classify hand-drawn symbols"""
+    
     def __init__(self):
-        pass
-
-    def preprocess(self, img):
-        """
-        Aggressive cleaning for blurry, blue-tinted spreadsheet cells.
-        """
-        # 1. Grayscale
-        if len(img.shape) == 3:
-            gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        self.symbol_types = {
+            'checkmark': 'Check Mark',
+            'question': 'Question Mark',
+            'horizontal_lines': 'Horizontal Lines',
+            'vertical_lines': 'Vertical Lines',
+            'box': 'Box'
+        }
+    
+    def preprocess(self, image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Preprocess the image for analysis"""
+        # Convert to grayscale if needed
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
-            gray = img
-
-        # 2. Contrast Enhancement (CLAHE) - Crucial for faint lines
-        clahe = cv.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-        gray = clahe.apply(gray)
-
-        # 3. Denoise
-        gray = cv.GaussianBlur(gray, (5, 5), 0)
-
-        # 4. Adaptive Thresholding (Inverted: White symbols on black)
-        binary = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                      cv.THRESH_BINARY_INV, 19, 4)
-
-        # 5. Morphological Closing (Connect broken lines/box edges)
-        kernel = cv.getStructuringElement(cv.MORPH_RECT, (3,3))
-        binary = cv.morphologyEx(binary, cv.MORPH_CLOSE, kernel, iterations=1)
+            gray = image.copy()
         
-        # Remove small noise
-        num_labels, labels, stats, centroids = cv.connectedComponentsWithStats(binary, connectivity=8)
-        for i in range(1, num_labels):
-            if stats[i, cv.CC_STAT_AREA] < 20: # Filter tiny dots
-                binary[labels == i] = 0
-
-        return binary
-
-    def count_lines_projection(self, binary_img, axis=0):
-        """
-        Counts peaks in pixel density to find number of lines.
-        axis=0 -> Vertical Projection (counts Vertical lines)
-        axis=1 -> Horizontal Projection (counts Horizontal lines)
-        """
-        # Sum white pixels along the axis
-        projection = np.sum(binary_img, axis=axis)
+        # Threshold to binary
+        _, binary = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
         
-        # Normalize
-        projection = projection / 255
+        # Denoise
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3,3), np.uint8))
         
-        # Find peaks (lines)
-        # distance=5 prevents counting thick lines as double
-        # height=5 ensures we don't count noise
-        peaks, _ = find_peaks(projection, distance=10, height=5)
+        return gray, binary
+    
+    def extract_features(self, binary: np.ndarray) -> Dict:
+        """Extract features from the binary image"""
+        features = {}
         
-        return len(peaks)
-
-    def analyze_contours(self, binary, original):
-        """
-        Main Classification Logic
-        """
-        # Find Contours with Hierarchy (to detect boxes with holes)
-        contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        # Find contours
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         if not contours:
-            return "Empty"
-
-        # Get the largest parent contour (ignore internal noise)
-        # Hierarchy format: [Next, Previous, First_Child, Parent]
-        # We look for contours with Parent == -1 (Top level)
-        parent_indices = [i for i, h in enumerate(hierarchy[0]) if h[3] == -1]
+            return features
         
-        if not parent_indices:
-            return "Empty"
-
-        # Sort by area, take largest
-        largest_idx = max(parent_indices, key=lambda i: cv.contourArea(contours[i]))
-        c = contours[largest_idx]
+        # Get the largest contour
+        main_contour = max(contours, key=cv2.contourArea)
         
-        # --- GEOMETRIC FEATURES ---
-        x, y, w, h = cv.boundingRect(c)
-        aspect_ratio = w / float(h)
-        area = cv.contourArea(c)
-        hull = cv.convexHull(c)
-        hull_area = cv.contourArea(hull)
-        if hull_area == 0: hull_area = 1
-        solidity = area / hull_area
+        # Basic shape features
+        features['num_contours'] = len(contours)
+        features['area'] = cv2.contourArea(main_contour)
+        features['perimeter'] = cv2.arcLength(main_contour, True)
         
-        # Check for holes (Child contours)
-        # If hierarchy[0][largest_idx][2] != -1, it has a child -> Likely a Box
-        has_hole = hierarchy[0][largest_idx][2] != -1
-
-        # --- LOGIC TREE ---
-
-        # 1. CHECK FOR MULTIPLE LINES (Projection Method)
-        # This is more robust than contour counting for broken lines
-        v_lines = self.count_lines_projection(binary, axis=0) # Sum columns
-        h_lines = self.count_lines_projection(binary, axis=1) # Sum rows
-
-        # If we see clearly separated lines
-        if v_lines > 1 and aspect_ratio < 2.0: # AR check prevents confusing a Box for 2 lines
-             return f"{v_lines} Vertical Lines"
+        # Bounding box
+        x, y, w, h = cv2.boundingRect(main_contour)
+        features['aspect_ratio'] = float(w) / h if h > 0 else 0
+        features['extent'] = features['area'] / (w * h) if w * h > 0 else 0
         
-        if h_lines > 1 and aspect_ratio > 0.5:
-             return f"{h_lines} Horizontal Lines"
-
-        # 2. CHECK FOR BOX
-        # A box usually has a hole (Euler number) OR roughly 4 corners
-        peri = cv.arcLength(c, True)
-        approx = cv.approxPolyDP(c, 0.04 * peri, True)
+        # Approximate polygon
+        epsilon = 0.02 * features['perimeter']
+        approx = cv2.approxPolyDP(main_contour, epsilon, True)
+        features['vertices'] = len(approx)
         
-        if has_hole:
-            return "Box"
+        # Convex hull
+        hull = cv2.convexHull(main_contour)
+        hull_area = cv2.contourArea(hull)
+        features['solidity'] = features['area'] / hull_area if hull_area > 0 else 0
         
-        if len(approx) == 4 and 0.8 < aspect_ratio < 1.2 and solidity > 0.7:
-             return "Box"
-
-        # 3. CHECK FOR QUESTION MARK
-        # Question marks are 'Top Heavy' and usually consist of 2 parts (body + dot)
-        # or have a very specific aspect ratio (Tall) with low solidity (curve)
+        # Line detection using HoughLinesP
+        lines = cv2.HoughLinesP(binary, 1, np.pi/180, threshold=30, 
+                                minLineLength=20, maxLineGap=10)
         
-        # Calculate Center of Mass
-        M = cv.moments(c)
-        if M["m00"] != 0:
-            cY = int(M["m01"] / M["m00"])
-            # Normalized center Y (0 is top, 1 is bottom)
-            norm_cY = (cY - y) / h
-        else:
-            norm_cY = 0.5
-
-        # Logic: 
-        # - Tall (AR < 0.6)
-        # - Top heavy (norm_cY < 0.5) implies the 'hook' is the main mass
-        # - OR: We found 2 distinct contours arranged vertically
-        if len(parent_indices) == 2:
-            # Sort vertically
-            sorted_cnts = sorted([contours[i] for i in parent_indices], key=lambda b: cv.boundingRect(b)[1])
-            # Check if bottom one is small (dot)
-            _, _, w_dot, h_dot = cv.boundingRect(sorted_cnts[1])
-            if (w_dot * h_dot) < (area * 0.3):
-                return "Question Mark"
-
-        if aspect_ratio < 0.8 and norm_cY < 0.45:
-             return "Question Mark"
-
-        # 4. CHECK FOR CHECK MARK
-        # - Not a box, not a line.
-        # - Aspect ratio is moderate (0.8 - 1.5)
-        # - Low solidity (The "V" shape creates a big empty convex hull)
-        if solidity < 0.7:
-            return "Check Mark"
+        if lines is not None:
+            features['num_lines'] = len(lines)
             
-        # 5. FALLBACK: SINGLE LINES
-        if aspect_ratio > 3.0:
-            return "1 Horizontal Line"
-        if aspect_ratio < 0.3:
-            return "1 Vertical Line"
-
-        # Default fallback
-        return "Unknown Shape (Likely Check Mark or Noise)"
-
-    def predict(self, image_path):
-        img = cv.imread(image_path)
-        if img is None: return "Error loading image"
+            # Classify lines as horizontal or vertical
+            horizontal = 0
+            vertical = 0
+            diagonal = 0
+            
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                angle = abs(np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi)
+                
+                if angle < 20 or angle > 160:
+                    horizontal += 1
+                elif 70 < angle < 110:
+                    vertical += 1
+                else:
+                    diagonal += 1
+            
+            features['horizontal_lines'] = horizontal
+            features['vertical_lines'] = vertical
+            features['diagonal_lines'] = diagonal
+        else:
+            features['num_lines'] = 0
+            features['horizontal_lines'] = 0
+            features['vertical_lines'] = 0
+            features['diagonal_lines'] = 0
         
-        processed = self.preprocess(img)
-        result = self.analyze_contours(processed, img)
+        # Moments for shape analysis
+        moments = cv2.moments(main_contour)
+        if moments['m00'] != 0:
+            features['hu_moments'] = cv2.HuMoments(moments).flatten()
+        
+        return features
+    
+    def classify(self, image: np.ndarray) -> Tuple[str, int, Dict]:
+        """Classify the symbol in the image"""
+        gray, binary = self.preprocess(image)
+        features = self.extract_features(binary)
+        
+        if not features:
+            return "Unknown", 0, features
+        
+        # Classification logic based on features
+        symbol_type = "Unknown"
+        count = 0
+        
+        # Check for box (rectangle with 4 corners, high solidity)
+        if (features.get('vertices', 0) == 4 and 
+            features.get('solidity', 0) < 0.3 and
+            0.7 < features.get('aspect_ratio', 0) < 1.5):
+            symbol_type = 'box'
+            count = 1
+        
+        # Check for horizontal lines (multiple separated horizontal strokes)
+        elif (features.get('horizontal_lines', 0) >= 2 and
+              features.get('vertical_lines', 0) <= 1 and
+              features.get('num_contours', 0) >= 2):
+            symbol_type = 'horizontal_lines'
+            count = min(features.get('num_contours', 0), 5)
+        
+        # Check for vertical lines (multiple separated vertical strokes)
+        elif (features.get('vertical_lines', 0) >= 2 and
+              features.get('horizontal_lines', 0) <= 1 and
+              features.get('num_contours', 0) >= 2):
+            symbol_type = 'vertical_lines'
+            count = min(features.get('num_contours', 0), 5)
+        
+        # Check for question mark (curved with a dot, or single complex contour)
+        elif (features.get('num_contours', 0) >= 1 and
+              features.get('solidity', 0) < 0.7 and
+              features.get('aspect_ratio', 0) < 0.8):
+            # Question marks are typically taller than wide
+            symbol_type = 'question'
+            count = 1
+        
+        # Check for checkmark (diagonal line with specific shape)
+        elif (features.get('diagonal_lines', 0) >= 1 and
+              features.get('num_contours', 0) == 1 and
+              features.get('vertices', 0) <= 6):
+            symbol_type = 'checkmark'
+            count = 1
+        
+        return symbol_type, count, features
+    
+    def predict(self, image_path: str) -> Dict:
+        """Main prediction function"""
+        # Read image
+        image = cv2.imread(image_path)
+        if image is None:
+            return {
+                'error': 'Could not read image',
+                'symbol': 'Unknown',
+                'count': 0
+            }
+        
+        symbol_type, count, features = self.classify(image)
+        
+        result = {
+            'symbol': self.symbol_types.get(symbol_type, 'Unknown'),
+            'symbol_code': symbol_type,
+            'count': count,
+            'features': {
+                'num_contours': features.get('num_contours', 0),
+                'aspect_ratio': round(features.get('aspect_ratio', 0), 2),
+                'solidity': round(features.get('solidity', 0), 2),
+                'horizontal_lines': features.get('horizontal_lines', 0),
+                'vertical_lines': features.get('vertical_lines', 0),
+                'diagonal_lines': features.get('diagonal_lines', 0)
+            }
+        }
+        
         return result
 
-# --- USAGE ---
-classifier = SymbolClassifier()
 
-# List of your files
-files = [
-    'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/1/row2_cell5.jpg', # Check Mark
-    'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/5/row5_cell5.jpg', # Question Mark
-    'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/8/row4_cell6.jpg', # Vertical Lines
-    'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/1/row8_cell5.jpg', # Horizontal Lines (Blurry)
-    'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/1/row10_cell5.jpg', # Box
-]
-
-for f in files:
-    print(f"File: {f} -> Prediction: {classifier.predict(f)}")
+# Example usage
+if __name__ == "__main__":
+    classifier = SymbolClassifier()
+    
+    # Test with your images
+    test_images = [
+        'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/cells/12/row4_cell5.jpg',
+    ]
+    
+    for img_path in test_images:
+        try:
+            result = classifier.predict(img_path)
+            print(f"/nImage: {img_path}")
+            print(f"Predicted: {result['symbol']}")
+            if result['count'] > 0:
+                print(f"Count: {result['count']}")
+            print(f"Features: {result['features']}")
+        except Exception as e:
+            print(f"Error processing {img_path}: {e}")
