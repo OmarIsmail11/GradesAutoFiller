@@ -80,7 +80,7 @@ def calculateCroppedImageDimensions(orderedPoints):
     return width, height
 
 def warpPaper(image, contour):
-    """Warp the paper to a top-down view rectangle."""
+    # Warp the paper to a top-down view rectangle.
     orderedPoints = orderPoints(contour)
     width, height = calculateCroppedImageDimensions(orderedPoints)
     destinationPoints = np.float32([[0, 0], [width, 0], [0, height], [width, height]])
@@ -90,7 +90,7 @@ def warpPaper(image, contour):
 
 # 4) Visualization functions
 def drawContours(image, contours, biggest=None):
-    """Draw all contours in green, highlight biggest in thick green."""
+    # Draw all contours in green, highlight biggest in thick green.
     img_copy = image.copy()
     cv.drawContours(img_copy, contours, -1, (0,255,0), 2)
     if biggest is not None:
@@ -114,7 +114,7 @@ def test():
     image_dir = os.path.join(BASE_DIR, "..", "data", "images")
     output_dir = os.path.join(BASE_DIR, "..", "data", "papers")
 
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok = True)
 
     images = sorted(os.listdir(image_dir))
 
@@ -123,11 +123,8 @@ def test():
 
         paper = extractPaper(imagePath)
 
-        outputPath = os.path.join(output_dir, f"{i+1}.jpg")
+        outputPath = os.path.join(output_dir, f"{i + 1}.jpg")
         cv.imwrite(outputPath, paper)
 
         print(f"Saved: {outputPath}")
 
-
-if __name__ == "__main__":
-    test()
