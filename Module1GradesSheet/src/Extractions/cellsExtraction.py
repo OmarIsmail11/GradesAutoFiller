@@ -4,8 +4,6 @@ import os
 from Module1GradesSheet.src.utils import *
 from Module1GradesSheet.src.Extractions.tableExtraction import *
 
-# ---------------------- FUNCTIONS ----------------------
-
 def detect_table_cells(image, min_cell_width=30, min_cell_height=20):
     """Detect table cells and group them into rows."""
     img_gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
@@ -16,13 +14,13 @@ def detect_table_cells(image, min_cell_width=30, min_cell_height=20):
 
     # Detect vertical lines
     kernel_length_v = img_gray.shape[1] // 120
-    vertical_kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, kernel_length_v))
+    vertical_kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, 20))
     temp_img_v = cv.erode(img_bin, vertical_kernel, iterations=5)
     vertical_lines = cv.dilate(temp_img_v, vertical_kernel, iterations=5)
 
     # Detect horizontal lines
     kernel_length_h = img_gray.shape[0] // 40
-    horizontal_kernel = cv.getStructuringElement(cv.MORPH_RECT, (kernel_length_h, 1))
+    horizontal_kernel = cv.getStructuringElement(cv.MORPH_RECT, (20, 1))
     temp_img_h = cv.erode(img_bin, horizontal_kernel, iterations=5)
     horizontal_lines = cv.dilate(temp_img_h, horizontal_kernel, iterations=5)
 
@@ -78,7 +76,6 @@ def save_cells(image, rows, output_root="../data/cells", image_index=0):
             cell_path = os.path.join(folder_path, f"row{i+1}_cell{j+1}.jpg")
             cv.imwrite(cell_path, cell_img)
 
-# ---------------------- TEST FUNCTION ----------------------
 
 def test_cell_extraction(image_paths, output_root="../data/cells"):
     for i, img_path in enumerate(image_paths):
@@ -91,7 +88,6 @@ def test_cell_extraction(image_paths, output_root="../data/cells"):
         save_cells(image, rows, output_root, image_index=i)
         print(f"Saved {len(rows)} rows for image {i+1}")
 
-# ---------------------- USAGE ----------------------
 
 images = ["../data/images/1.jpg", "../data/images/2.jpg", "../data/images/3.jpg", "../data/images/4.jpg",
           "../data/images/5.jpg", "../data/images/6.jpg", "../data/images/7.jpg", "../data/images/8.jpg",
