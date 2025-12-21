@@ -7,7 +7,17 @@ from skimage.color import rgb2gray,rgb2hsv
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2 as cv
 
+def show_image(img, title=""):
+    plt.figure(figsize=(4,4))
+    if len(img.shape) == 2:
+        plt.imshow(img, cmap='gray')
+    else:
+        plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
 
 # Show the figures / plots inside the notebook
 def show_images(images, titles = None):

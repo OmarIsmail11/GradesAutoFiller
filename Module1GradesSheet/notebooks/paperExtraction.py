@@ -120,4 +120,5 @@ def test():
         cv.imwrite(outputPath, paper)
         print(f"Saved: {outputPath}")
 
-test()
+if __name__ == "main":
+    test()
