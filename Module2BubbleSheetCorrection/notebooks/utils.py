@@ -7,7 +7,7 @@ from skimage.color import rgb2gray,rgb2hsv
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+import cv2 as cv
 
 # Show the figures / plots inside the notebook
 def show_images(images, titles = None):
@@ -35,3 +35,13 @@ def showHist(img):
     imgHist = histogram(img, nbins=256)
     
     bar(imgHist[1].astype(np.uint8), imgHist[0], width = 0.8, align = 'center')
+
+def show_image(img, title=""):
+    plt.figure(figsize=(8,6))
+    if len(img.shape) == 2:
+        plt.imshow(img, cmap='gray')
+    else:
+        plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
