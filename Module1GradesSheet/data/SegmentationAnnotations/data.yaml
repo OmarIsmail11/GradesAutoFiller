@@ -1,0 +1,9 @@
+path: C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/data/SegmentationAnnotations
+
+train: train/images
+val: valid/images
+test: test/images
+
+# Classes
+nc: 1
+names: ['digit']

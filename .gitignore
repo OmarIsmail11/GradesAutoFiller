@@ -8,3 +8,8 @@
 *.csv
 __pycache__/
 *.pyc
+*.txt
+*.pt
+runs/
+*.cache
+*.zip
