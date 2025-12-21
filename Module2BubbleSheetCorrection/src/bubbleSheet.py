@@ -16,6 +16,7 @@ height, width, channels = paper.shape
 # student_id = extract_id(idImage)
 answers = detectAllAnswers(paper)
 
+
 # # -------------------------------
 # # 2) Model answers
 # # -------------------------------
