@@ -1,0 +1,15 @@
+*.jpg
+*.jpeg
+*.png
+.env
+*.h5
+*.joblib
+*.xlsx
+*.csv
+__pycache__/
+*.pyc
+*.txt
+*.pt
+runs/
+*.cache
+*.zip

@@ -1,0 +1,11 @@
+path: C:\Users\youse\Desktop\University\Image\GradesAutoFiller\Module1GradesSheet\data\Symbols-2.v2-symbolsdata.yolov12
+
+
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 6
+names: ['Empty', 'Horizontal', 'Vertical', 'box', 'check', 'question']
+
+
