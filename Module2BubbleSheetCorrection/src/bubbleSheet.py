@@ -4,42 +4,89 @@ from answersExtraction import *
 from idExtraction import *
 from paperExtraction import *
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
-imagePath = r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\6.jpg"
-paper = extractPaper(imagePath)
+def readModelAnswer(filePath):
+    modelAnswers = []
+    with open(filePath, "r") as f:
+        for line in f:
+            answer = line.strip()
+            if answer:
+                modelAnswers.append(answer)
+    return modelAnswers
 
-answers = detectAllAnswers(paper)
-id = detectID(paper)
-print(id)
-print(answers)
+def gradePapers(paperImages, modelAnswers):
+    results = []
 
-# # 2) Model answers
-# # -------------------------------
-# model_answers = ['A', 'B', 'C', 'C', 'B', 'A', 'A', 'B', 'C', 'C', 'C', 'B', 'B']
+    max_grade = len(modelAnswers)
+    outputExcel = "grades.xlsx"
 
-# # -------------------------------
-# # 3) Compare and encode
-# # -------------------------------
-# encoded_answers = []
-# for s_ans, m_ans in zip(student_answers, model_answers):
-#     if s_ans == 'Z':         # Empty
-#         encoded_answers.append(0)
-#     elif s_ans == 'X':       # Multiple
-#         encoded_answers.append(-1)
-#     elif s_ans == m_ans:     # Correct
-#         encoded_answers.append(1)
-#     else:                    # Wrong
-#         encoded_answers.append(0)
+    for img_path in paperImages:
+        # Load paper
+        if isinstance(img_path, str):
+            paper = extractPaper(img_path)
+        else:
+            paper = img_path
 
-# # -------------------------------
-# # 4) Create DataFrame
-# # -------------------------------
-# columns = ["ID"] + [f"Q{i+1}" for i in range(len(model_answers))]
-# data = [ [student_id] + encoded_answers ]
-# df = pd.DataFrame(data, columns=columns)
+        student_id = detectID(paper)
+        student_answers = detectAllAnswers(paper)
 
-# # -------------------------------
-# # 5) Save to Excel
-# # -------------------------------
-# df.to_excel("student_answers.xlsx", index=False)
-# print("Excel saved with ID and answers!")
+        grades = []
+        for student_ans, correct_ans in zip(student_answers, modelAnswers):
+            if student_ans == 'Z':
+                grade = 0
+            elif student_ans == correct_ans:
+                grade = 1
+            elif student_ans == 'X':
+                grade = -1
+            else:
+                grade = 0
+            grades.append(grade)
+
+        total_score = sum(grades)
+        results.append([student_id] + grades + [total_score])
+
+    # Prepare DataFrame
+    col_names = ["ID"] + [f"Q{i+1}" for i in range(len(modelAnswers))] + [f"Total / {max_grade}"]
+    df = pd.DataFrame(results, columns=col_names)
+
+    # Save to Excel
+    df.to_excel(outputExcel, index=False)
+
+    # Load Excel for formatting
+    wb = load_workbook(outputExcel)
+    ws = wb.active
+
+    yellow_fill = PatternFill(start_color="FFFFFF00", end_color="FFFFFF00", fill_type="solid")  # wrong
+    red_fill = PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")  # multiple
+
+    # Apply highlights
+    for row_idx in range(2, len(df)+2):  # skip header
+        for col_idx in range(2, 2 + len(modelAnswers)):  # Q1..Qn
+            cell_value = ws.cell(row=row_idx, column=col_idx).value
+            if cell_value == -1:
+                ws.cell(row=row_idx, column=col_idx).fill = red_fill
+            elif cell_value == 0:
+                ws.cell(row=row_idx, column=col_idx).fill = yellow_fill
+
+    wb.save(outputExcel)
+    print(f"Graded Excel with highlights saved to {outputExcel}")
+
+
+# ----------------------------
+# Example usage
+# ----------------------------
+filePath = r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\modelAnswer.txt"
+modelAnswers = readModelAnswer(filePath)
+
+paperPaths = [
+    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\1.jpg",
+    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\2.jpg",
+    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\3.jpg",
+    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\4.jpg",
+    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module2BubbleSheetCorrection\data\images\5.jpg"
+]
+
+gradePapers(paperPaths, modelAnswers)
+
