@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from imutils import contours
 import imutils
-from paperExtraction import *
-from utils import *
+from Module2BubbleSheetCorrection.src.paperExtraction import *
+from Module2BubbleSheetCorrection.src.utils import *
 
 # Automatic bubble detection for one column
 def detectColumnAnswers(columnImage):

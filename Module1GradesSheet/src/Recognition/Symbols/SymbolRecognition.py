@@ -26,7 +26,7 @@ class SymbolRecognizer:
                 print("YOLO requested but model missing. Fallback to Classical.")
                 return self.classical.predict(cell_img)
         
-        elif method_to_use == "CLASSICAL":
+        elif method_to_use == "TRADITIONAL":
             return self.classical.predict(cell_img)
             
         else:

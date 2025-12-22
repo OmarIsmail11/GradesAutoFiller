@@ -8,35 +8,72 @@
 </head>
 <body>
     <div class="container">
-        <h1>AI Table Recognition</h1>
-        <p>Upload a scanned grade sheet and define your columns.</p>
+        <h1>AI Auto-Grader System</h1>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="view-table">Table Grading</button>
+            <button class="tab-btn" data-tab="view-bubble">Bubble Sheet Correction</button>
+        </div>
 
-        <div class="main-layout">
-            <div class="config-panel">
-                <h3>1. Define Columns</h3>
-                <div id="column-list">
-                    </div>
-                <button id="add-col-btn" class="secondary-btn">+ Add Column</button>
+        <div id="view-table" class="view-section active">
+            <p>Upload a scanned grade sheet and define your columns.</p>
+            <div class="main-layout">
+                <div class="config-panel">
+                    <h3>1. Define Columns</h3>
+                    <div id="column-list"></div>
+                    <button id="add-col-btn" class="secondary-btn">+ Add Column</button>
 
-                <h3>2. Upload Image</h3>
-                <input type="file" id="image-input" accept="image/*">
-                
-                <button id="process-btn" class="primary-btn">Process Sheet</button>
-            </div>
-
-            <div class="status-panel">
-                <div id="loader" class="hidden">
-                    <div class="spinner"></div>
-                    <p>AI is processing table and recognizing text...</p>
+                    <h3>2. Upload Image</h3>
+                    <input type="file" id="image-input" accept="image/*">
+                    
+                    <button id="process-btn" class="primary-btn">Process Sheet</button>
                 </div>
 
-                <div id="result-area" class="hidden">
-                    <div class="success-icon">✓</div>
-                    <h3>Processing Complete!</h3>
-                    <button id="download-btn" class="download-btn">Download Excel (.xlsx)</button>
+                <div class="status-panel">
+                    <div id="loader" class="hidden">
+                        <div class="spinner"></div>
+                        <p>AI is processing table...</p>
+                    </div>
+
+                    <div id="result-area" class="hidden">
+                        <div class="success-icon">✓</div>
+                        <h3>Processing Complete!</h3>
+                        <button id="download-btn" class="download-btn">Download Excel</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div id="view-bubble" class="view-section hidden">
+            <p>Upload the model answer key (.txt) and multiple student papers.</p>
+            <div class="main-layout">
+                <div class="config-panel">
+                    <h3>1. Model Answer Key</h3>
+                    <p class="hint">Upload a .txt file with one answer per line (e.g., A, B, C...).</p>
+                    <input type="file" id="model-key-input" accept=".txt">
+
+                    <h3>2. Student Papers</h3>
+                    <p class="hint">Select all student image files at once.</p>
+                    <input type="file" id="bubble-images-input" accept="image/*" multiple>
+
+                    <button id="process-bubble-btn" class="primary-btn">Grade All Papers</button>
+                </div>
+
+                <div class="status-panel">
+                    <div id="loader-bubble" class="hidden">
+                        <div class="spinner"></div>
+                        <p>Grading multiple papers...</p>
+                    </div>
+
+                    <div id="result-area-bubble" class="hidden">
+                        <div class="success-icon">✓</div>
+                        <h3>Grading Complete!</h3>
+                        <button id="download-bubble-btn" class="download-btn">Download Grades (.xlsx)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     <script src="script.js"></script>
 </body>

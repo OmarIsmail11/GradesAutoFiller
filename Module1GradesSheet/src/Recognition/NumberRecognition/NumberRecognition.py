@@ -10,8 +10,8 @@ from ultralytics import YOLO
 load_dotenv()
 
 # --- MODEL PATHS ---
-SVM_PATH = os.getenv("SVM_MODEL_PATH_", r'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/svm_mnist_blurry.joblib')
-DNN_PATH = os.getenv("DNN_MODEL_PATH_", r'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/models/mnist_deep_model.h5')
+SVM_PATH = os.getenv("SVM_MODEL_PATH", r'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/svm_mnist_blurry.joblib')
+DNN_PATH = os.getenv("DNN_MODEL_PATH", r'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/Module1GradesSheet/models/mnist_deep_model.h5')
 YOLO_PATH = os.getenv("SEGMENTATION_YOLO_MODEL_PATH", r'C:/Users/youse/Desktop/University/Image/GradesAutoFiller/runs/detect/digit_segmenter4/weights/best.pt')
 
 class NumberRecognizer:

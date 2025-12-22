@@ -1,17 +1,18 @@
-import cv2 as cv
-import numpy as np
-from answersExtraction import *
-from idExtraction import *
-from paperExtraction import *
+import os
+import sys
+
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+
+from Module2BubbleSheetCorrection.src.answersExtraction import *
+from Module2BubbleSheetCorrection.src.idExtraction import *
+from Module2BubbleSheetCorrection.src.paperExtraction import *
 import pandas as pd
-import cv2 as cv
-import numpy as np
-import pandas as pd
-from answersExtraction import *
-from idExtraction import *
-from paperExtraction import *
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+
 
 def readModelAnswer(filePath):
     model_answers = []
@@ -23,8 +24,7 @@ def readModelAnswer(filePath):
     return model_answers
 
 
-def gradePapers(paperImages, modelAnswers):
-    outputExcel="grades.xlsx"
+def gradePapers(paperImages, modelAnswers, outputExcel="grades.xlsx"):
     results = []
 
     maxGrade = len(modelAnswers)
@@ -72,17 +72,16 @@ def gradePapers(paperImages, modelAnswers):
 
     wb.save(outputExcel)
     print(f"Graded Excel with highlights saved to {outputExcel}")
+    
+    return outputExcel
 
-# filePath = r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\modelAnswer.txt"
+
+
+# filePath = r"C:/Users/youse/Desktop/University/Image/GradesAutoFiller/modelAnswer.txt"
 # modelAnswers = readModelAnswer(filePath)
 
-# paperPaths = [
-#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\1.jpg",
-#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\2.jpg",
-#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\3.jpg",
-#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\4.jpg",
-#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\5.jpg"
-# ]
+# paperPaths = [r"C:\Users\youse\Downloads\Bubble_sheet\zipped\1\ID2Q13CH3-20220106T190109Z-001\ID2Q13CH3\4dc7740c-2781-49c5-8f91-bb59b4d92bc8.jpg",
+#               r"C:\Users\youse\Downloads\Bubble_sheet\zipped\1\ID2Q13CH3-20220106T190109Z-001\ID2Q13CH3\6c7802ca-050d-40a6-83e0-27673a80c62d.jpg"]
 
 # gradePapers(paperPaths, modelAnswers)
 

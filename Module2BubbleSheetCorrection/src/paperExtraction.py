@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-from utils import *
+from Module2BubbleSheetCorrection.src.utils import *
 import os
 
 # 1) Image reading and preprocessing

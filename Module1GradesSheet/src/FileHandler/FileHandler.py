@@ -19,6 +19,8 @@ class FileHandler:
         
         self.printed_method = os.getenv("PRINTED_NUMBER_RECOGNITION_METHOD", "TRADITIONAL")
         self.written_method = os.getenv("WRITTEN_NUMBER_RECOGNITION_METHOD", "ALREADY_MADE_OCR")
+        self.segmentation_method = os.getenv("SEGMENTATION_NUMBER_RECOGNITION_METHOD", "TRADITIONAL")
+        self.symbol_method = os.getenv("SYMBOL_RECOGNITION_METHOD", "TRADITIONAL")
         
         print(f"--- FileHandler Ready ---")
 
@@ -64,7 +66,8 @@ class FileHandler:
         if col_type == "Number":
             val = self.number_engine.predict_id_from_cell(
                 cell_roi, 
-                method=self.printed_method, 
+                recognition_method=self.printed_method,
+                segmentation_method=self.segmentation_method,
                 expected_digits=expected_len
             )
             return val, "WHITE"
@@ -73,7 +76,8 @@ class FileHandler:
         elif col_type == "Written Number":
             val = self.number_engine.predict_id_from_cell(
                 cell_roi, 
-                method=self.written_method, 
+                recognition_method=self.written_method,
+                segmentation_method=self.segmentation_method,
                 expected_digits=expected_len
             )
             return val, "WHITE"
@@ -88,7 +92,7 @@ class FileHandler:
             return val, "WHITE"
         
         elif col_type == "Symbol":
-            val = self.symbol_engine.predict(cell_roi)
+            val = self.symbol_engine.predict(cell_roi, override_method=self.symbol_method)
             colour = "WHITE"
             if val == -1:
                 colour = "RED"

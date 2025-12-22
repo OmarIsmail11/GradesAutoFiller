@@ -20,7 +20,7 @@ class YOLOSymbolRecognizer:
             5: 'question'
         }
 
-    def predict(self, cellImage, conf=0.4):
+    def predict(self, cellImage, conf=0.5):
         if self.model is None:
             return "Error: YOLO Not Loaded"
 
