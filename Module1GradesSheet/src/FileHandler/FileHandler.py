@@ -9,11 +9,13 @@ from Module1GradesSheet.src.Extractions.cellsExtraction import detect_table_cell
 from Module1GradesSheet.src.Extractions.tableExtraction import extractTable
 from Module1GradesSheet.src.Recognition.Names.NameRecognition import name_recognizer
 from Module1GradesSheet.src.Recognition.NumberRecognition.NumberRecognition import number_recognizer
+from Module1GradesSheet.src.Recognition.Symbols.SymbolRecognition import symbol_recognizer
 
 class FileHandler:
     def __init__(self):
         self.name_engine = name_recognizer
         self.number_engine = number_recognizer
+        self.symbol_engine = symbol_recognizer
         
         self.printed_method = os.getenv("PRINTED_NUMBER_RECOGNITION_METHOD", "TRADITIONAL")
         self.written_method = os.getenv("WRITTEN_NUMBER_RECOGNITION_METHOD", "ALREADY_MADE_OCR")
@@ -84,6 +86,15 @@ class FileHandler:
         elif col_type == "English Name":
             val = self.name_engine.recognize_student_name(cell_roi, "en")
             return val, "WHITE"
+        
+        elif col_type == "Symbol":
+            val = self.symbol_engine.predict(cell_roi)
+            colour = "WHITE"
+            if val == -1:
+                colour = "RED"
+                val = ""
+
+            return val, colour
 
         return "", "WHITE"
 

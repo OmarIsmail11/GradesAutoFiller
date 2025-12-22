@@ -73,17 +73,17 @@ def gradePapers(paperImages, modelAnswers):
     wb.save(outputExcel)
     print(f"Graded Excel with highlights saved to {outputExcel}")
 
-filePath = r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\modelAnswer.txt"
-modelAnswers = readModelAnswer(filePath)
+# filePath = r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\modelAnswer.txt"
+# modelAnswers = readModelAnswer(filePath)
 
-paperPaths = [
-    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\1.jpg",
-    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\2.jpg",
-    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\3.jpg",
-    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\4.jpg",
-    r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\5.jpg"
-]
+# paperPaths = [
+#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\1.jpg",
+#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\2.jpg",
+#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\3.jpg",
+#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\4.jpg",
+#     r"D:\Omar\Image Processing & Computer Vision\GradesAutoFiller\Module 2 - Bubble Sheet Correction\data\images\5.jpg"
+# ]
 
-gradePapers(paperPaths, modelAnswers)
+# gradePapers(paperPaths, modelAnswers)
 
 

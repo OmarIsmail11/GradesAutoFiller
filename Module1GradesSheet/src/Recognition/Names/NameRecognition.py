@@ -9,8 +9,7 @@ class NameRecognizer:
     def _get_reader(self, lang):
         if lang not in self._readers:
             print(f"--- Loading EasyOCR model for language: {lang} ---")
-            # gpu=True is used here as requested previously
-            self._readers[lang] = easyocr.Reader([lang], gpu=True)
+            self._readers[lang] = easyocr.Reader([lang], gpu=False)
         return self._readers[lang]
 
     def recognize_student_name(self, cell_img, lang_input='en'):

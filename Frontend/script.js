@@ -17,6 +17,7 @@ function addColumn() {
             <option value="Written Number">Grade (Handwritten)</option>
             <option value="Arabic Name">Arabic Name</option>
             <option value="English Name">English Name</option>
+            <option value="Symbol">Symbol / Checkmark</option>
         </select>
         <input type="number" placeholder="Len" class="col-len" style="width: 50px;">
         <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">✕</button>
